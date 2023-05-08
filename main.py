@@ -209,26 +209,8 @@ class Concert(object):
                     if i > len(session_list):
                         i = len(session_list)
                     j: WebElement = session_list[i-1]
-                    # TODO 不确定已满的场次带的是什么Tag
-                    
-                    k = self.isClassPresent(j, 'item-tag', True)
-                    if k:  # 如果找到了带presell的类
-                        if k.text == '无票':
-                            continue
-                        elif k.text == '预售':
-                            toBeClicks.append(j)
-                            break
-                        elif k.text == '惠':
-                            toBeClicks.append(j)
-                            break
-                    else:
-                        toBeClicks.append(j)
-                        break
-                
-                # 多场次的场要先选择场次才会出现票档
-                for i in toBeClicks:
-                    i.click()
-                    sleep(0.05)
+                    j.click()
+                    break
 
                 # 选定票档
                 toBeClicks = []
@@ -242,17 +224,12 @@ class Concert(object):
                     if i > len(price_list):
                         i = len(price_list)
                     j = price_list[i-1]
-                    # k = j.find_element(by=By.CLASS_NAME, value='item-tag')
-                    k = self.isClassPresent(j, 'item-tag', True)
-                    if k:  # 存在notticket代表存在缺货登记，跳过
-                        continue
+                    if i>4:
+                        self.driver.execute_script("arguments[0].click();", j)
+                        sleep(100)
                     else:
-                        toBeClicks.append(j)
-                        break
-
-                for i in toBeClicks:
-                    i.click()
-                    sleep(0.1)
+                        j.click()
+                    break
 
                 try:
                     buybutton = box.find_element(
@@ -273,6 +250,7 @@ class Concert(object):
                     raise Exception(u"***购票按钮未开始***")
 
             except Exception as e:
+                print(e)
                 raise Exception(f"***Error: 选择日期or场次or票档不成功***: {e}")
 
             try:
@@ -281,6 +259,7 @@ class Concert(object):
             except:
                 if buybutton_text == "选座购买":  # 选座购买没有增减票数键
                     buybutton.click()
+                    sleep(0.2)
                     self.status = 5
                     print(u"###请自行选择位置和票价###")
                     break
@@ -292,6 +271,7 @@ class Concert(object):
             if buybutton_text == "立即预订" or buybutton_text == "立即购买" or buybutton_text == '确定':
                 for i in range(self.ticket_num-1):  # 设置增加票数
                     ticket_num_up.click()
+                    sleep(0.05)
                 buybutton.click()
                 self.status = 4
                 WebDriverWait(self.driver, 3, 0.1).until(
@@ -304,7 +284,7 @@ class Concert(object):
         if self.status in [3, 4, 5]:
             # 选择观影人
             toBeClicks = []
-            WebDriverWait(self.driver, 5, 0.1).until(
+            WebDriverWait(self.driver, 5, 0.15).until(
                 EC.presence_of_element_located((By.XPATH, '//*[@id="dmViewerBlock_DmViewerBlock"]/div[2]/div/div')))
             people = self.driver.find_elements(
                 By.XPATH, '//*[@id="dmViewerBlock_DmViewerBlock"]/div[2]/div/div')
@@ -316,7 +296,7 @@ class Concert(object):
                 j.click()
                 sleep(0.05)
 
-            WebDriverWait(self.driver, 5, 0.1).until(
+            WebDriverWait(self.driver, 5, 0.2).until(
                 EC.presence_of_element_located((By.XPATH, '//*[@id="dmOrderSubmitBlock_DmOrderSubmitBlock"]/div[2]/div/div[2]/div[3]/div[2]')))
             comfirmBtn = self.driver.find_element(
                 By.XPATH, '//*[@id="dmOrderSubmitBlock_DmOrderSubmitBlock"]/div[2]/div/div[2]/div[3]/div[2]')
