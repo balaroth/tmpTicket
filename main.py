@@ -95,6 +95,9 @@ class Concert(object):
         options.add_experimental_option("mobileEmulation", mobile_emulation)
         # 就是这一行告诉chrome去掉了webdriver痕迹，令navigator.webdriver=false，极其关键
         options.add_argument("--disable-blink-features=AutomationControlled")
+        # 设置本地代理
+        # options.add_argument("--proxy-server=127.0.0.1:8080")
+
 
         # 更换等待策略为不等待浏览器加载完全就进行下一步操作
         capa = DesiredCapabilities.CHROME
@@ -155,7 +158,12 @@ class Concert(object):
 
             try:
                 buybutton = box.find_element(by=By.CLASS_NAME, value='buy__button')
-                sleep(0.5)
+                # 元素未加载完成会出现 buybutton.text = '' 的情况
+                while True:
+                    if not buybutton.text :
+                        sleep(0.1)
+                    else:
+                        break
                 buybutton_text: str = buybutton.text
             except Exception as e:
                 raise Exception(f"***Error: buybutton 位置找不到***: {e}")
@@ -167,7 +175,6 @@ class Concert(object):
             if "缺货" in buybutton_text:
                 raise Exception("---已经缺货了---")
 
-            sleep(0.1)
             buybutton.click()
             box = WebDriverWait(self.driver, 2, 0.1).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, '.sku-pop-wrapper')))
@@ -247,14 +254,18 @@ class Concert(object):
                     i.click()
                     sleep(0.1)
 
-                buybutton = box.find_element(
-                    by=By.CLASS_NAME, value='sku-footer-buy-button')
-                sleep(1.0)
+                try:
+                    buybutton = box.find_element(
+                        by=By.CLASS_NAME, value='sku-footer-buy-button')
+                    while True:
+                        if not buybutton.text:
+                            sleep(0.1)
+                        else:
+                            break
+                except Exception as e:
+                    raise Exception(f"***Error: sku-footer-buy-button 位置找不到***: {e}")
+
                 buybutton_text = buybutton.text
-                if buybutton_text == "":
-                    raise Exception(u"***Error: 提交票档按钮文字获取为空,适当调整 sleep 时间***")
-
-
                 try:
                     WebDriverWait(self.driver, 2, 0.1).until(
                     EC.presence_of_element_located((By.CLASS_NAME, 'bui-dm-sku-counter')))
@@ -297,7 +308,6 @@ class Concert(object):
                 EC.presence_of_element_located((By.XPATH, '//*[@id="dmViewerBlock_DmViewerBlock"]/div[2]/div/div')))
             people = self.driver.find_elements(
                 By.XPATH, '//*[@id="dmViewerBlock_DmViewerBlock"]/div[2]/div/div')
-            sleep(0.2)
 
             for i in self.viewer_person:
                 if i > len(people):
@@ -310,7 +320,6 @@ class Concert(object):
                 EC.presence_of_element_located((By.XPATH, '//*[@id="dmOrderSubmitBlock_DmOrderSubmitBlock"]/div[2]/div/div[2]/div[3]/div[2]')))
             comfirmBtn = self.driver.find_element(
                 By.XPATH, '//*[@id="dmOrderSubmitBlock_DmOrderSubmitBlock"]/div[2]/div/div[2]/div[3]/div[2]')
-            sleep(0.5)
             comfirmBtn.click()
             # 判断title是不是支付宝
             print(u"###等待跳转到--付款界面--，可自行刷新，若长期不跳转可选择-- CRTL+C --重新抢票###")
@@ -327,7 +336,7 @@ class Concert(object):
  1.抢票成功
  2.抢票失败,未知原因没跳转到支付宝界面,进入下一轮抢票
     """
-
+                    print(c)
                     step = input('等待跳转到支付宝页面,请输入:')
                     if step == '1':
                         # 成功
